@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "quicktype"
+version = "0.1.0"
+description = ""
+authors = ["Julio <julioeruzicka@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+numpy = "^1.26.2"
+matplotlib = "^3.8.2"
+pytesseract = "^0.3.10"
+opencv-python = "^4.8.1.78"
+PyAutoGUI = "^0.9.54"
+PyGetWindow = "^0.0.9"
+
+[tool.poetry.group.dev.dependencies]
+rich = "^13.7.0"
+
+[tool.poetry.scripts]
+dev = "quicktype.main:run"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
