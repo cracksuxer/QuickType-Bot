@@ -18,7 +18,7 @@ PyGetWindow = "^0.0.9"
 rich = "^13.7.0"
 
 [tool.poetry.scripts]
-dev = "quicktype.main:run"
+dev = "main:run"
 
 [build-system]
 requires = ["poetry-core"]
