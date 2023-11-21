@@ -3,6 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Environments
+quicktype_ev
+
+# Vscode
+.vscode
+
 # C extensions
 *.so
 
