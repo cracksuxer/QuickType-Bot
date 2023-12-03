@@ -1,10 +1,8 @@
 import os
-os.environ['QT_QPA_PLATFORM'] = 'wayland'
 
 import cv2
 import numpy as np
 import pytesseract
-import unittest
 
 from rich.console import Console
 from rich.traceback import install
@@ -14,17 +12,19 @@ import matplotlib.pyplot as plt
 install()
 console = Console()
 
+
 # Function to determine the color of the text region
 def determine_region_color(region, gray_image):
     x, y, w, h = region
-    region_of_interest = gray_image[y:y+h, x:x+w]
+    region_of_interest = gray_image[y : y + h, x : x + w]
     average_intensity = np.mean(region_of_interest)
-   
+
     white_gray_threshold = 65
     if average_intensity > white_gray_threshold:
-        return 'white'
+        return "white"
     else:
-        return 'gray'
+        return "gray"
+
 
 # Function to preprocess the text region based on its color
 def preprocess_region(region, region_color, gray_image):
@@ -37,41 +37,58 @@ def preprocess_region(region, region_color, gray_image):
     y_end = min(y + h + border_size, gray_image.shape[0])
 
     expanded_region_of_interest = gray_image[y_start:y_end, x_start:x_end]
-    
-    if region_color == 'white':
+
+    if region_color == "white":
         return cv2.bitwise_not(expanded_region_of_interest)
     else:
-        _, mask = cv2.threshold(expanded_region_of_interest, 60, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        _, mask = cv2.threshold(
+            expanded_region_of_interest,
+            60,
+            255,
+            cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU,
+        )
         background = np.zeros_like(expanded_region_of_interest)
-        region_of_interest = cv2.bitwise_and(expanded_region_of_interest, expanded_region_of_interest, mask=mask)
+        region_of_interest = cv2.bitwise_and(
+            expanded_region_of_interest, expanded_region_of_interest, mask=mask
+        )
 
         contrast_level = 5
-        region_of_interest = cv2.addWeighted(region_of_interest, contrast_level, background, 0, 0)
+        region_of_interest = cv2.addWeighted(
+            region_of_interest, contrast_level, background, 0, 0
+        )
 
         return cv2.addWeighted(region_of_interest, contrast_level, background, 0, 0)
 
+
 # Function to segment text regions
-def segment_text_regions_with_dilation(binary_image, kernel_size=(10,10)):
+def segment_text_regions_with_dilation(binary_image, kernel_size=(10, 10)):
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, kernel_size)
     dilated_image = cv2.dilate(binary_image, kernel, iterations=1)
 
-    contours, _ = cv2.findContours(dilated_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(
+        dilated_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
     text_regions = [cv2.boundingRect(cnt) for cnt in contours]
 
     return text_regions
 
+
 def sort_text_regions(text_regions):
     text_regions.sort(key=lambda x: x[1])
-    
+
     line_clusters = {}
     line_height_threshold = 10
 
     for region in text_regions:
         _, y, _, h = region
         found_cluster = False
-        
+
         for line_y in line_clusters:
-            if abs(line_y - y) < line_height_threshold or abs((line_y + line_clusters[line_y][0][3]) - (y + h)) < line_height_threshold:
+            if (
+                abs(line_y - y) < line_height_threshold
+                or abs((line_y + line_clusters[line_y][0][3]) - (y + h))
+                < line_height_threshold
+            ):
                 line_clusters[line_y].append(region)
                 found_cluster = True
                 break
@@ -86,9 +103,14 @@ def sort_text_regions(text_regions):
 
     return sorted_regions
 
-def get_image_text_and_colors(image_path: str = './test2.png') -> list[tuple[str, str]]:
+
+def get_image_text_and_colors(image_path: str = "test.png") -> list[tuple[str, str]]:
     image = cv2.imread(image_path)
+    plt.imshow(image)
+    plt.show()
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    plt.imshow(cv2.cvtColor(gray_image, cv2.COLOR_BGR2RGB))
+    plt.show()
 
     plt.imshow(cv2.cvtColor(gray_image, cv2.COLOR_BGR2RGB))
     plt.show()
@@ -101,7 +123,7 @@ def get_image_text_and_colors(image_path: str = './test2.png') -> list[tuple[str
     image_copy = image.copy()
     for region in text_regions:
         x, y, w, h = region
-        cv2.rectangle(image_copy, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        cv2.rectangle(image_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
     sorted_regions = sort_text_regions(text_regions)
 
@@ -110,10 +132,39 @@ def get_image_text_and_colors(image_path: str = './test2.png') -> list[tuple[str
     for region in sorted_regions:
         region_color = determine_region_color(region, gray_image)
         preprocessed_region = preprocess_region(region, region_color, gray_image)
+        # export preprocessed_region as a png
+        cv2.imwrite("img/preprocessed_region.png", preprocessed_region)
+        # plt.imshow(cv2.cvtColor(preprocessed_region, cv2.COLOR_BGR2RGB))
+        # plt.show()
 
-        text = str(pytesseract.image_to_string(preprocessed_region, config='--psm 7', lang='spa')).replace('\n', '')
+        # Obtén la ruta al directorio 'app'
+        app_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+        # Construye la ruta al directorio 'tesseract' dentro del directorio 'app'
+        tesseract_directory = os.path.join(app_directory, "tesseract")
+
+        # Construye la ruta al ejecutable de TesseractOCR
+        tesseract_path = os.path.join(
+            tesseract_directory,
+            r"tesseractWindows\tesseract.exe" if os.name == "nt" else "tesseract",
+        )
+
+        # Establece la ruta al ejecutable de TesseractOCR para pytesseract
+        pytesseract.pytesseract.tesseract_cmd = tesseract_path
+
+        tessdata_directory = os.path.join(
+            tesseract_directory,
+            r"tesseractWindows\tessdata" if os.name == "nt" else "tessdata",
+        )
+        tesseract_configs = r'--psm 7 --tessdata-dir "' + tessdata_directory + r'"'
+        text = str(
+            pytesseract.image_to_string(
+                preprocessed_region, config=tesseract_configs, lang="spa"
+            )
+        ).replace("\n", "")
+        print("text: ", text)
         text_results.append((text, region_color))
 
-    console.print(text_results, style='bold green')
+    console.print(text_results, style="bold green")
 
     return text_results
