@@ -131,6 +131,10 @@ def get_image_text_and_colors(image_path: str = "test.png") -> list[tuple[str, s
 
     for region in sorted_regions:
         region_color = determine_region_color(region, gray_image)
+
+        if region_color == "white":
+            continue
+
         preprocessed_region = preprocess_region(region, region_color, gray_image)
         # export preprocessed_region as a png
         cv2.imwrite("img/preprocessed_region.png", preprocessed_region)
@@ -164,6 +168,9 @@ def get_image_text_and_colors(image_path: str = "test.png") -> list[tuple[str, s
         ).replace("\n", "")
         print("text: ", text)
         text_results.append((text, region_color))
+
+        if region_color == "gray":
+            break
 
     console.print(text_results, style="bold green")
 
