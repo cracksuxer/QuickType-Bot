@@ -2,7 +2,7 @@
 name = "quicktype"
 version = "0.1.0"
 description = ""
-authors = ["Julio <julioeruzicka@gmail.com>"]
+authors = ["Julio <julioeruzicka@gmail.com>", "Daniel <danimndz02@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -13,6 +13,7 @@ pytesseract = "^0.3.10"
 opencv-python = "^4.8.1.78"
 PyAutoGUI = "^0.9.54"
 PyGetWindow = "^0.0.9"
+pysimplegui = "^4.60.5"
 
 [tool.poetry.group.dev.dependencies]
 rich = "^13.7.0"
