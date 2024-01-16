@@ -8,6 +8,7 @@ from quicktype.im2text import get_image_text_and_colors
 from quicktype.screenshot import fetch_active_browsers
 from quicktype.typing_loop import start_typing
 import pygetwindow as gw
+from quicktype.ocrManager import OcrManager
 
 from rich.console import Console
 from rich.traceback import install
@@ -20,10 +21,14 @@ def window_change(prev_active_windows: int) -> bool:
     return prev_active_windows != new_active_windows
 
 
+LANGUAGE_MAP = {"Spanish": "spa", "English": "eng"}
+
+
 def start_gui():
     
     active_browsers = Dict[str, gw.Window]
     
+    manager = OcrManager()
     sg.theme("DarkAmber")  # Add a touch of color
     # All the stuff inside your window.
     layout = [
@@ -47,7 +52,9 @@ def start_gui():
         [sg.Text("Bot parameters:")],
         [
             sg.Text("Language:"),
-            sg.OptionMenu(["Spanish", "English"], default_value="Spanish"),
+            sg.OptionMenu(
+                ["Spanish", "English"], default_value="Spanish", key="language"
+            ),
         ],
         [
             sg.Text("Maximum delay time for bot's typing"),
@@ -115,5 +122,11 @@ def start_gui():
                 name="bot_writting",
                 args=["img/test.png"],
             ).start()
+
+            # th.Thread(
+            #     target=manager.get_image_text,
+            #     name="bot_writting",
+            #     args=["img/test.png", LANGUAGE_MAP[values["language"]]]
+            # ).start()
 
     window.close()
