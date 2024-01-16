@@ -17,6 +17,16 @@ class WindowSize:
         self.top_left = (top_left_x, top_left_y)
         self.bottom_right = (bottom_right_x, bottom_right_y)
 
+def fetch_active_browsers() -> (list[gw.Window], list[str]):
+    active_browsers: list[gw.Window] = []
+    browser_names = ["Firefox", "Chrome", "Edge", "Brave"]
+    for browser in browser_names:
+        console.log(f"Fetching {browser} windows...")
+        browser_windows = gw.getWindowsWithTitle(browser)
+        active_browsers.extend(browser_windows)
+
+    browser_titles: list[str] = [browser.title for browser in active_browsers]
+    return active_browsers, browser_titles
 
 def take_window_pos(window_name: str) -> Optional[WindowSize]:
     """Takes a screenshot of the window with the given name."""
