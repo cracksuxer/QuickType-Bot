@@ -1,7 +1,7 @@
-from typing import Optional, Union
-from sys import platform
+import os
+import time
+from typing import Dict
 
-import subprocess
 from rich.traceback import install
 from rich.console import Console
 import pyautogui
@@ -17,7 +17,7 @@ class WindowSize:
         self.top_left = (top_left_x, top_left_y)
         self.bottom_right = (bottom_right_x, bottom_right_y)
 
-def fetch_active_browsers() -> (list[gw.Window], list[str]):
+def fetch_active_browsers() -> Dict[str, gw.Window]:
     active_browsers: list[gw.Window] = []
     browser_names = ["Firefox", "Chrome", "Edge", "Brave"]
     for browser in browser_names:
@@ -25,64 +25,40 @@ def fetch_active_browsers() -> (list[gw.Window], list[str]):
         browser_windows = gw.getWindowsWithTitle(browser)
         active_browsers.extend(browser_windows)
 
-    browser_titles: list[str] = [browser.title for browser in active_browsers]
-    return active_browsers, browser_titles
+    browser_titles = {}
+    for browser in active_browsers:
+        browser_titles[browser.title] = browser
+    
+    return browser_titles
 
-def take_window_pos(window_name: str) -> Optional[WindowSize]:
-    """Takes a screenshot of the window with the given name."""
-    if platform == "linux":
-        try:
-            window_id = subprocess.check_output(
-                ['xdotool', 'search', '--name', window_name]
-            ).decode().strip()
-            geometry_output = subprocess.check_output(
-                ['xdotool', 'getwindowgeometry', '--shell', window_id]
-            ).decode()
+def take_screenshot(window: gw.Window) -> str:
+    if not os.path.exists("screenshots"):
+        os.makedirs("screenshots")
 
-            x, y, width, height = 0, 0, 0, 0  # Default values
-            for line in geometry_output.split('\n'):
-                if line.startswith('X='):
-                    x = int(line.split('=')[1])
-                elif line.startswith('Y='):
-                    y = int(line.split('=')[1])
-                elif line.startswith('WIDTH='):
-                    width = int(line.split('=')[1])
-                elif line.startswith('HEIGHT='):
-                    height = int(line.split('=')[1])
+    n_screenshots = len(os.listdir("screenshots")) + 1
+    sc_path = f"screenshots/screenshot_{n_screenshots}.png"
+    
+    # window.show()
+    # window.activate()
+    # window.maximize()
+    
+    # time.sleep(0.5)
+    
+    if window:
+        rect_width = int(window.width * 1/2)
+        rect_height = int(window.height * 1/3)
 
-            x2, y2 = x + width, y + height
+        start_x = int(window.topleft[0] + (window.width - rect_width - 100) / 2)
+        start_y = int(window.topleft[1] + (window.height - rect_height - 100) / 2)
 
-            return WindowSize(x, y, x2, y2)
-        except subprocess.CalledProcessError:
-            console.log("Window not found.", style="bold red")
-            return None
-
-    elif platform == "win32":
-        window_list = gw.getWindowsWithTitle(window_name)
-        window = None
-        if len(window_list) > 0:
-            window = window_list[0]
-        if window:
-            console.log(window.left, window.top, window.right, window.bottom)
-            return WindowSize(window.left, window.top, window.right, window.bottom)
-
-        console.log("Window not found.", style="bold red")
-        return None
+        pyautogui.screenshot(region=(
+            start_x,               # X coordinate
+            start_y,               # Y coordinate
+            rect_width,            # Width of the rectangle
+            rect_height            # Height of the rectangle
+        )).save(sc_path)
+        
+        return sc_path
     else:
-        console.log("OS not supported.", style="bold red")
-        return None
-
-windowSpecs: Union[WindowSize, None] = take_window_pos("Code")
-
-if windowSpecs:
-    width = windowSpecs.bottom_right[0] - windowSpecs.top_left[0]
-    height = windowSpecs.bottom_right[1] - windowSpecs.top_left[1]
-
-    pyautogui.screenshot(region=(
-        windowSpecs.top_left[0],
-        windowSpecs.top_left[1],
-        width,
-        height
-    )).save("screenshot.png")
-else:
-    print("Window not found or OS not supported.")
+        console.log("Window not found or OS not supported.", style="red")
+        raise Exception("Window not found or OS not supported.")
