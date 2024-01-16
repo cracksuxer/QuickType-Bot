@@ -111,14 +111,7 @@ def get_image_text_and_colors(image_path: str = "test.png") -> list[tuple[str, s
         console.print(f"Error: {e}", style="bold red")
         return []
 
-    plt.imshow(image)
-    plt.show()
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    plt.imshow(cv2.cvtColor(gray_image, cv2.COLOR_BGR2RGB))
-    plt.show()
-
-    plt.imshow(cv2.cvtColor(gray_image, cv2.COLOR_BGR2RGB))
-    plt.show()
 
     threshold_value = 90
     _, binary_image = cv2.threshold(gray_image, threshold_value, 255, cv2.THRESH_BINARY)
@@ -142,9 +135,9 @@ def get_image_text_and_colors(image_path: str = "test.png") -> list[tuple[str, s
 
         preprocessed_region = preprocess_region(region, region_color, gray_image)
         # export preprocessed_region as a png
-        cv2.imwrite("img/preprocessed_region.png", preprocessed_region)
+        # cv2.imwrite("img/preprocessed_region.png", preprocessed_region)
         # plt.imshow(cv2.cvtColor(preprocessed_region, cv2.COLOR_BGR2RGB))
-        # plt.show()
+        # plt.savefig("img/preprocessed_region.png")
 
         # Obtén la ruta al directorio 'app'
         app_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -170,13 +163,13 @@ def get_image_text_and_colors(image_path: str = "test.png") -> list[tuple[str, s
             pytesseract.image_to_string(
                 preprocessed_region, config=tesseract_configs, lang="spa"
             )
-        ).replace("\n", "")
-        print("text: ", text)
+        ).replace("\n", "").replace("|", "")
+        # print("text: ", text)
         text_results.append((text, region_color))
 
         if region_color == "gray":
             break
 
-    console.print(text_results, style="bold green")
+    # console.print(text_results, style="bold green")
 
     return text_results

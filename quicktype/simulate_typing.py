@@ -11,26 +11,31 @@ keyboard = Controller()
 
 NEAR_KEYWORDS_MAPS = {
     "a": ["q", "w", "s", "z", "x"],
+    "á": ["q", "w", "s", "z", "x"],
     "b": ["v", "g", "h", "n"],
     "c": ["x", "d", "f", "v"],
     "d": ["s", "e", "r", "f", "c", "x"],
     "e": ["w", "s", "d", "r"],
+    "é": ["w", "s", "d", "r"],
     "f": ["d", "r", "t", "g", "v", "c"],
     "g": ["f", "t", "y", "h", "b", "v"],
     "h": ["g", "y", "u", "j", "n", "b"],
     "i": ["u", "j", "k", "o"],
+    "í": ["u", "j", "k", "o"],
     "j": ["h", "u", "i", "k", "m", "n"],
     "k": ["j", "i", "o", "l", "m"],
     "l": ["k", "o", "p"],
     "m": ["n", "j", "k"],
     "n": ["b", "h", "j", "m"],
     "o": ["i", "k", "l", "p"],
+    "ó": ["i", "k", "l", "p"],
     "p": ["o", "l"],
     "q": ["w", "a", "s"],
     "r": ["e", "d", "f", "t"],
     "s": ["a", "w", "e", "d", "x", "z"],
     "t": ["r", "f", "g", "y"],
     "u": ["y", "h", "j", "i"],
+    "ú": ["y", "h", "j", "i"],
     "v": ["c", "f", "g", "b"],
     "w": ["q", "a", "s", "e"],
     "x": ["z", "s", "d", "c"],
@@ -70,16 +75,16 @@ NEAR_KEYWORDS_MAPS = {
     ")": ["0"],
 }
 
-def type_character(char: str | Key, delay: float = 0.1):
+def type_character(char: str | Key, delay: float = 0.1) -> None:
     """Types a single character with a given delay."""
     keyboard.press(char)
+    console.log(f"Typing {char}")
     time.sleep(random.random() * delay)
     keyboard.release(char)
     time.sleep(random.random() * delay)
 
-def type_string(text: str, pos: tuple[int, int], max_interval_delay: float):
+def type_string(text: str, max_interval_delay: float) -> None:
     """Types a string at a given position with a given delay between keystrokes."""
-    pyautogui.moveTo(pos)
     pyautogui.click()
     for char in text:
         min_avg_speed = 0.005
