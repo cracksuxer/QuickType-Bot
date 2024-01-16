@@ -105,7 +105,12 @@ def sort_text_regions(text_regions):
 
 
 def get_image_text_and_colors(image_path: str = "test.png") -> list[tuple[str, str]]:
-    image = cv2.imread(image_path)
+    try:
+        image = cv2.imread(image_path)
+    except Exception as e:
+        console.print(f"Error: {e}", style="bold red")
+        return []
+
     plt.imshow(image)
     plt.show()
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

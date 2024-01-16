@@ -13,6 +13,7 @@ pytesseract = "^0.3.10"
 opencv-python = "^4.8.1.78"
 PyAutoGUI = "^0.9.54"
 PyGetWindow = "^0.0.9"
+pynput = "^1.7.6"
 pysimplegui = "^4.60.5"
 
 [tool.poetry.group.dev.dependencies]
