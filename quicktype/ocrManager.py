@@ -1,13 +1,18 @@
 import os
+from typing import Literal
 
 import cv2 as cv
 import numpy as np
 import pytesseract
-from typing import Literal
+
+# from quicktype.data_manager import DataManager
 
 
 class OcrManager:
+    """Manages the OCR process."""
+
     _instance = None
+    _dataManager = None
 
     def __new__(cls):
         if not cls._instance:
@@ -116,31 +121,35 @@ class OcrManager:
             sorted_regions.extend(line_clusters[line_y])
 
         return sorted_regions
-    
-    def get_image_text(self, image_path: str, lang: Literal["spa", "eng"] = "spa") -> str:
+
+    # def link_data_manager(self, dataManager: DataManager) -> None:
+    #     """Links the data manager to the OCR manager."""
+    #     OcrManager._dataManager = dataManager
+
+    def get_image_text(
+        self, image_path: str, lang: Literal["spa", "eng"] = "spa"
+    ) -> None:
         """Gets the text from an image."""
         image = cv.imread(image_path)
         gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
         threshold_value = 90
-        _, binary_image = cv.threshold(gray_image, threshold_value, 255, cv.THRESH_BINARY)
+        _, binary_image = cv.threshold(
+            gray_image, threshold_value, 255, cv.THRESH_BINARY
+        )
 
         text_regions = self._segment_text_regions_with_dilation(binary_image)
         sorted_regions = self._sort_text_regions(text_regions)
-        text = ""
         for region in sorted_regions:
             region_color = self._determine_region_color(region, gray_image)
             if region_color == "white":
                 continue
 
-            preprocessed_region = self._preprocess_region(region, region_color, gray_image)
+            preprocessed_region = self._preprocess_region(
+                region, region_color, gray_image
+            )
             text = pytesseract.image_to_string(
                 preprocessed_region, lang=lang, config=self._tess_configs
             ).replace("\n", "")
 
-            if region_color == "gray":
-                break
-
-        print(text)
-
-        return text
+            # OcrManager._dataManager.send(text)
