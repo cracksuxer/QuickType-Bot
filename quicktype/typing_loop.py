@@ -1,19 +1,15 @@
-from calendar import c
-from concurrent.futures import thread
 import threading as th
 import time
 from typing import Literal, Tuple
 
 import cv2
-from matplotlib.pyplot import gray
 import pygetwindow as gw
 import pyautogui
 
 from rich.console import Console
 from rich.traceback import install
-from quicktype import data_manager
 from quicktype.data_manager import DataManager
-from quicktype.ocrManager import OcrManager
+from quicktype.ocr_manager import OcrManager
 from quicktype.screenshot import take_screenshot
 from quicktype.simulate_typing import Typer
 

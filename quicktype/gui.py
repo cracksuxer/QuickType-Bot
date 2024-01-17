@@ -7,7 +7,7 @@ import threading as th
 from quicktype.screenshot import fetch_active_browsers
 from quicktype.typing_loop import start_typing
 import pygetwindow as gw
-from quicktype.ocrManager import OcrManager
+from quicktype.ocr_manager import OcrManager
 
 from rich.console import Console
 from rich.traceback import install
