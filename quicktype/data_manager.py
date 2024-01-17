@@ -7,23 +7,28 @@ from rich.traceback import install
 console = Console()
 install()
 
+
 class DataManager:
     """Manager data to send and receive asynchronously."""
+
     _instance = None
-    
+
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._initialize()
+            cls._instance = super(DataManager, cls).__new__(cls)
+            cls._initialized = False
         return cls._instance
-    
-    def _initialize(self):
+
+    def __init__(self):
         """Initialize the manager."""
-        self._data = []
-        self._lock = th.Lock()
-        self._consumed_counter = 0
-        self._threshold = 5
-        self._condition = th.Condition(self._lock)
+        self._initialized = False
+        if not self._initialized:
+            self._data = []
+            self._lock = th.Lock()
+            self._consumed_counter = 0
+            self._threshold = 5
+            self._condition = th.Condition(self._lock)
+            self._initialized = True
 
     def send(self, single_word: str = "", words_list: List[str] = []):
         """Send data to the manager."""

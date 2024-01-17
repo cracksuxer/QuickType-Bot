@@ -99,7 +99,7 @@ def start_gui():
         event, values = window.read(timeout=1000) # type: ignore
         if event in (sg.WIN_CLOSED, "Cancel"):  # if user closes window or clicks cancel
             a = th.enumerate()
-            if any([t.name == "bot_writting" for t in a]):
+            if any(t.name == "bot_writting" for t in a):
                 console.log("bot is running")
 
             for active_th in a:

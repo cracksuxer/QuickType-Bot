@@ -1,5 +1,6 @@
 import os
 from typing import Literal
+import threading as th
 
 import cv2 as cv
 from matplotlib import pyplot as plt
@@ -128,7 +129,10 @@ class OcrManager:
         OcrManager._dataManager = dataManager
 
     def get_image_text(
-        self, image_path: str, lang: Literal["spa", "eng"] = "spa"
+        self,
+        image_path: str,
+        lang: Literal["spa", "eng"],
+        typer_finished_event: th.Event,
     ) -> None:
         """Gets the text from an image."""
         image = cv.imread(image_path)
@@ -142,19 +146,21 @@ class OcrManager:
         text_regions = self._segment_text_regions_with_dilation(binary_image)
         sorted_regions = self._sort_text_regions(text_regions)
         for region in sorted_regions:
+            if typer_finished_event.is_set():
+                raise Exception("typer finished")
+
             region_color = self._determine_region_color(region, gray_image)
-            
+
             if region_color == "white":
                 continue
 
-            preprocessed_region = self._preprocess_region(region, region_color, gray_image)
-            
             preprocessed_region = self._preprocess_region(
                 region, region_color, gray_image
             )
+
             text = pytesseract.image_to_string(
                 preprocessed_region, lang=lang, config=self._tess_configs
-            ).replace("\n", "").replace("|", "")
+            ).replace("\n", "")
 
             if OcrManager._dataManager:
                 OcrManager._dataManager.send(text)
