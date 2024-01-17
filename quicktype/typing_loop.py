@@ -1,18 +1,44 @@
+from concurrent.futures import thread
 import time
 import cv2
 import pygetwindow as gw
+from quicktype.data_manager import DataManager
 from quicktype.ocrManager import OcrManager
 from quicktype.screenshot import take_screenshot
-from quicktype.simulate_typing import type_string
+from quicktype.simulate_typing import Typer
 import pyautogui
+
+import threading as th
 
 from rich.console import Console
 from rich.traceback import install
 
+ocr_thread_termination = True
+typer_thread_termination = True
+
+
 console = Console()
 install()
 
-manager = OcrManager()
+def start_typer(data_manager: DataManager, max_interval_delay: float):
+    typer = Typer()
+    global typer_thread_termination
+    while typer_thread_termination:
+        word = data_manager.take()
+        if word:
+            typer.type_string(word + " ", max_interval_delay)
+
+def run_ocr(data_manager: DataManager, window: gw.Window) -> None:
+    """ Runs the OCR loop"""
+    global ocr_thread_termination
+    ocr_manager = OcrManager()
+    ocr_manager.link_data_manager(data_manager)
+    
+    while ocr_thread_termination:
+        sc_path = take_screenshot(window)
+        ocr_manager.get_image_text(sc_path, "spa")
+        with data_manager._condition:
+            data_manager._condition.wait()
 
 def start_typing(window: gw.Window, max_interval_delay: float) -> None:
     """Starts the typing loop."""    
@@ -32,32 +58,33 @@ def start_typing(window: gw.Window, max_interval_delay: float) -> None:
     pyautogui.write(".")
     pyautogui.press("backspace")
     
-    # Take number of words to type from the input box
-    # n_words = int(manager.get_image_text(take_screenshot(window), "spa"))
-    # console.log(n_words)
+    data_manager = DataManager()
+
+    try:
+        ocr_thrad = th.Thread(target=run_ocr, name="ocr_thread", args=(data_manager, window))
+        typer_thread = th.Thread(target=start_typer, name="typer_thread", args=(data_manager, max_interval_delay))
+    except Exception as e:
+        console.log(e)
+        return
     
-    # 3.Loop screenshoting and retrieving text
-    # - Take screenshot
-    # - Call imag_to_text
-    # - Type text
-    # Loop continues until it types exactly the number of words
-    last_cs_path = ""
-    while(True):
-        try:
-            sc_path = take_screenshot(window)
-            
-            if last_cs_path != "":
-                if (cv2.imread(sc_path) == cv2.imread(last_cs_path)).all():
-                    break
-            
-            last_cs_path = sc_path
-            pyautogui.moveTo(window.center) # Por si acaso clicamos al centro en cada palabra
-            pyautogui.click()
-            sc_text = manager.get_image_text(sc_path, "spa")
-            type_string(sc_text + " ", max_interval_delay)
-            
-        except Exception as e:
-            console.log(f"An error occured: {e}", style="red")
-            raise e
+    ocr_thrad.start()
+    typer_thread.start()
+    
+    times = 0
+    
+    while True:
+        sc_path = take_screenshot(window)
+        if times == 0:
+            time.sleep(10)
+        else:
+            time.sleep(3)
+        sc_path2 = take_screenshot(window)
+
+        if (cv2.imread(sc_path) == cv2.imread(sc_path2)).all():
+            ocr_thread_termination = False
+            typer_thread_termination = False
+            break
         
+        times += 1
+    
     console.log("Typing finished", style="green")

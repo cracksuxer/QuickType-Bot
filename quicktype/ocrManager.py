@@ -149,13 +149,6 @@ class OcrManager:
 
             preprocessed_region = self._preprocess_region(region, region_color, gray_image)
             
-            n_screenshots = len(os.listdir("img")) + 1
-            sc_path = f"img/preprocessed_region_{n_screenshots}.png"
-            
-            cv.imwrite(sc_path, preprocessed_region)
-            plt.imshow(cv.cvtColor(preprocessed_region, cv.COLOR_BGR2RGB))
-            plt.savefig(sc_path)
-            
             preprocessed_region = self._preprocess_region(
                 region, region_color, gray_image
             )

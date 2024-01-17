@@ -110,6 +110,9 @@ def start_gui():
             break
 
         if event == "Start":
+            if not values["browser_list"]:
+                console.log("No browser selected")
+                continue
             console.log("Starting bot...")
             if "bot_writting" in [t.name for t in th.enumerate()]:
                 console.log("bot is running")
@@ -118,7 +121,7 @@ def start_gui():
             th.Thread(
                 target=start_typing,
                 name="bot_writting",
-                args=[active_browsers[values['browser_list']], values["max_delay"]] # type: ignore
+                args=[active_browsers[values['browser_list']], 0.1] # type: ignore
             ).start()
 
             # th.Thread(
