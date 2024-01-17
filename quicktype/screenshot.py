@@ -37,12 +37,18 @@ def fetch_active_browsers() -> Dict[str, gw.Window]:
     return browser_titles
 
 
-def take_screenshot(window: gw.Window) -> str:
+def take_screenshot(window: gw.Window, path: str = "") -> str:
     if not os.path.exists("screenshots"):
         os.makedirs("screenshots")
 
-    n_screenshots = len(os.listdir("screenshots")) + 1
-    sc_path = f"screenshots/screenshot_{n_screenshots}.png"
+    n_screenshots = len(os.listdir("screenshots")) + 1 if path == "" else len(
+        os.listdir(path)
+    ) + 1
+    sc_path = (
+        f"screenshots/screenshot_ocr{n_screenshots}.png"
+        if path == ""
+        else path + f"/screenshot_cc{n_screenshots}.png"
+    )
 
     # window.show()
     # window.activate()
@@ -51,8 +57,8 @@ def take_screenshot(window: gw.Window) -> str:
     # time.sleep(0.5)
 
     if window:
-        rect_width = int(window.width - (window.width * 1 / 10))
-        rect_height = int(window.height * 1 / 3)
+        rect_width = int(window.width - (window.width * 1 / 8))
+        rect_height = int(window.height * 1 / 2.8)
 
         start_x = int(window.topleft[0] + (window.width - rect_width) / 2)
         start_y = int(window.topleft[1] + (window.height - rect_height) / 2)

@@ -1,14 +1,16 @@
 import os
-from typing import Literal
+from typing import Dict, List, Literal
 import threading as th
 
 import cv2 as cv
-from matplotlib import pyplot as plt
 import numpy as np
 import pytesseract
 
 from quicktype.data_manager import DataManager
 
+from rich.console import Console
+
+console = Console()
 
 class OcrManager:
     """Manages the OCR process."""
@@ -95,16 +97,19 @@ class OcrManager:
         return text_regions
 
     def _sort_text_regions(self, text_regions):
-        """Sorts text regions from top to bottom, left to right."""
+        """Sorts text regions into lines and orders them from left to right."""
         text_regions.sort(key=lambda x: x[1])
 
         line_clusters = {}
         line_height_threshold = 10
+        line_counter = 0
+        last_line_y = None
 
         for region in text_regions:
             _, y, _, h = region
             found_cluster = False
 
+            # Check if the region belongs to an existing line
             for line_y, cluster in line_clusters.items():
                 if (
                     abs(line_y - y) < line_height_threshold
@@ -114,13 +119,19 @@ class OcrManager:
                     found_cluster = True
                     break
 
+            # Start a new line if the region doesn't fit into existing lines
             if not found_cluster:
-                line_clusters[y] = [region]
+                if last_line_y is None or abs(last_line_y - y) >= line_height_threshold:
+                    line_counter += 1
+                    if line_counter > 4:
+                        break
+                    last_line_y = y
+                line_clusters.setdefault(line_counter, []).append(region)
 
-        sorted_regions = []
-        for line_y in sorted(line_clusters.keys()):
-            line_clusters[line_y].sort(key=lambda x: x[0])
-            sorted_regions.extend(line_clusters[line_y])
+        sorted_regions = {}
+        for line_number, regions in line_clusters.items():
+            regions.sort(key=lambda x: x[0])
+            sorted_regions[f'Line {line_number}'] = regions
 
         return sorted_regions
 
@@ -133,6 +144,7 @@ class OcrManager:
         image_path: str,
         lang: Literal["spa", "eng"],
         typer_finished_event: th.Event,
+        line: int = 0,
     ) -> None:
         """Gets the text from an image."""
         image = cv.imread(image_path)
@@ -145,22 +157,29 @@ class OcrManager:
 
         text_regions = self._segment_text_regions_with_dilation(binary_image)
         sorted_regions = self._sort_text_regions(text_regions)
-        for region in sorted_regions:
-            if typer_finished_event.is_set():
-                raise Exception("typer finished")
+        
+        if line != 0:
+            sorted_regions: Dict[str, List] = {
+                f"Line {line}" : sorted_regions[f"Line {line + 1}"]
+            }
+        
+        for _, regions in sorted_regions.items():
+            for region in regions:
+                if typer_finished_event.is_set():
+                    raise Exception("typer finished")
 
-            region_color = self._determine_region_color(region, gray_image)
+                region_color = self._determine_region_color(region, gray_image)
 
-            if region_color == "white":
-                continue
+                if region_color == "white":
+                    continue
 
-            preprocessed_region = self._preprocess_region(
-                region, region_color, gray_image
-            )
+                preprocessed_region = self._preprocess_region(
+                    region, region_color, gray_image
+                )
 
-            text = pytesseract.image_to_string(
-                preprocessed_region, lang=lang, config=self._tess_configs
-            ).replace("\n", "")
+                text = pytesseract.image_to_string(
+                    preprocessed_region, lang=lang, config=self._tess_configs
+                ).replace("\n", "")
 
-            if OcrManager._dataManager:
-                OcrManager._dataManager.send(text)
+                if OcrManager._dataManager:
+                    OcrManager._dataManager.send(text)
