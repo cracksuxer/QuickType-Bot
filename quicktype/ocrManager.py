@@ -1,6 +1,7 @@
 import os
 
 import cv2 as cv
+from matplotlib import pyplot as plt
 import numpy as np
 import pytesseract
 from typing import Literal
@@ -130,13 +131,22 @@ class OcrManager:
         text = ""
         for region in sorted_regions:
             region_color = self._determine_region_color(region, gray_image)
+            
             if region_color == "white":
                 continue
 
             preprocessed_region = self._preprocess_region(region, region_color, gray_image)
+            
+            n_screenshots = len(os.listdir("img")) + 1
+            sc_path = f"img/preprocessed_region_{n_screenshots}.png"
+            
+            cv.imwrite(sc_path, preprocessed_region)
+            plt.imshow(cv.cvtColor(preprocessed_region, cv.COLOR_BGR2RGB))
+            plt.savefig(sc_path)
+            
             text = pytesseract.image_to_string(
                 preprocessed_region, lang=lang, config=self._tess_configs
-            ).replace("\n", "")
+            ).replace("\n", "").replace("|", "")
 
             if region_color == "gray":
                 break

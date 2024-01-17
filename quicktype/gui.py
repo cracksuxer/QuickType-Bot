@@ -4,7 +4,6 @@ from typing import Dict
 
 import threading as th
 
-from quicktype.im2text import get_image_text_and_colors
 from quicktype.screenshot import fetch_active_browsers
 from quicktype.typing_loop import start_typing
 import pygetwindow as gw
@@ -112,15 +111,14 @@ def start_gui():
 
         if event == "Start":
             console.log("Starting bot...")
-            start_typing(active_browsers[values['browser_list']], values["max_delay"]) # type: ignore
             if "bot_writting" in [t.name for t in th.enumerate()]:
                 console.log("bot is running")
                 continue
 
             th.Thread(
-                target=get_image_text_and_colors,
+                target=start_typing,
                 name="bot_writting",
-                args=["img/test.png"],
+                args=[active_browsers[values['browser_list']], values["max_delay"]] # type: ignore
             ).start()
 
             # th.Thread(

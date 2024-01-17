@@ -78,7 +78,6 @@ NEAR_KEYWORDS_MAPS = {
 def type_character(char: str | Key, delay: float = 0.1) -> None:
     """Types a single character with a given delay."""
     keyboard.press(char)
-    console.log(f"Typing {char}")
     time.sleep(random.random() * delay)
     keyboard.release(char)
     time.sleep(random.random() * delay)
