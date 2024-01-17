@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import pytesseract
 
-# from quicktype.data_manager import DataManager
+from quicktype.data_manager import DataManager
 
 
 class OcrManager:
@@ -123,9 +123,9 @@ class OcrManager:
 
         return sorted_regions
 
-    # def link_data_manager(self, dataManager: DataManager) -> None:
-    #     """Links the data manager to the OCR manager."""
-    #     OcrManager._dataManager = dataManager
+    def link_data_manager(self, dataManager: DataManager) -> None:
+        """Links the data manager to the OCR manager."""
+        OcrManager._dataManager = dataManager
 
     def get_image_text(
         self, image_path: str, lang: Literal["spa", "eng"] = "spa"
@@ -147,7 +147,6 @@ class OcrManager:
             if region_color == "white":
                 continue
 
-<<<<<<< HEAD
             preprocessed_region = self._preprocess_region(region, region_color, gray_image)
             
             n_screenshots = len(os.listdir("img")) + 1
@@ -157,13 +156,12 @@ class OcrManager:
             plt.imshow(cv.cvtColor(preprocessed_region, cv.COLOR_BGR2RGB))
             plt.savefig(sc_path)
             
-=======
             preprocessed_region = self._preprocess_region(
                 region, region_color, gray_image
             )
->>>>>>> origin/feature/tessclass
             text = pytesseract.image_to_string(
                 preprocessed_region, lang=lang, config=self._tess_configs
             ).replace("\n", "").replace("|", "")
 
-            # OcrManager._dataManager.send(text)
+            if OcrManager._dataManager:
+                OcrManager._dataManager.send(text)
