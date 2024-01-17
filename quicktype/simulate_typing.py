@@ -1,4 +1,4 @@
-from ctypes.wintypes import HLOCAL
+from typing import Tuple
 import pyautogui
 from pynput.keyboard import Key, Controller
 import time
@@ -27,6 +27,7 @@ NEAR_KEYWORDS_MAPS = {
     "l": ["k", "o", "p"],
     "m": ["n", "j", "k"],
     "n": ["b", "h", "j", "m"],
+    "ñ": ["l", "p", "o"],
     "o": ["i", "k", "l", "p"],
     "ó": ["i", "k", "l", "p"],
     "p": ["o", "l"],
@@ -42,6 +43,7 @@ NEAR_KEYWORDS_MAPS = {
     "y": ["t", "g", "h", "u"],
     "z": ["a", "s", "x"],
     " ": [" "],
+    "-": ["-"],
     ".": [","],
     ",": ["."],
     "'": ["/"],
@@ -75,41 +77,56 @@ NEAR_KEYWORDS_MAPS = {
     ")": ["0"],
 }
 
-def type_character(char: str | Key, delay: float = 0.1) -> None:
-    """Types a single character with a given delay."""
-    keyboard.press(char)
-    console.log(f"Typing {char}")
-    time.sleep(random.random() * delay)
-    keyboard.release(char)
-    time.sleep(random.random() * delay)
 
-def type_string(text: str, max_interval_delay: float) -> None:
-    """Types a string at a given position with a given delay between keystrokes."""
-    pyautogui.click()
-    for char in text:
-        min_avg_speed = 0.005
-        max_avg_speed = 0.03
-        medium_avg_speed = min_avg_speed + (max_avg_speed - min_avg_speed) / 2
-        avg_speed = np.random.choice([min_avg_speed, medium_avg_speed, max_avg_speed])
-        random_delay = np.random.normal(avg_speed, 0.02, 1000)  #
-        clipped_delay = np.random.choice(np.clip(random_delay, 0, max_interval_delay))
+class Typer:
+    _instance = None
 
-        type_character(char)
-        time.sleep(clipped_delay)
+    def __new__(cls):
+        if not cls._instance:
+            cls._instance = super(Typer, cls).__new__(cls)
+        return cls._instance
 
-        if random.random() < 0.07:  #
-            random_character_error = random.choice(NEAR_KEYWORDS_MAPS[char.lower()])
-            pyautogui.typewrite(random_character_error)
+    def __type_character(self, char: str | Key, delay: float = 0.08) -> None:
+        """Types a single character with a given delay."""
+        keyboard.press(char)
+        time.sleep(random.random() * delay)
+        keyboard.release(char)
+        time.sleep(random.random() * delay)
 
-            if random.random() < 0.2:  #
-                random_double_character_error = random.choice(NEAR_KEYWORDS_MAPS[random_character_error])
-                pyautogui.typewrite(random_double_character_error)
-                time.sleep(random.random() * 0.1)
-                type_character(Key.backspace)
+    def type_string(
+        self,
+        text: str,
+        delay: Tuple[float, float],
+        error_rate: float,
+        random_delay_rate: float,
+    ) -> None:
+        """Types a string at a given position with a given delay between keystrokes."""
 
-            time.sleep(random.random() * 0.1)
-            type_character(Key.backspace)
-            
+        for char in text:
+            min_avg_speed = min(delay)
+            max_avg_speed = max(delay)
+            medium_avg_speed = min_avg_speed + (max_avg_speed - min_avg_speed) / 2
+            avg_speed = np.random.choice(
+                [min_avg_speed, medium_avg_speed, max_avg_speed]
+            )
+            random_delay = np.random.normal(avg_speed, 0.02, 1000)  #
+            clipped_delay = np.random.choice(np.clip(random_delay, 0, 0.1))
 
-        if random.random() < 0.08:  #
-            time.sleep(random.uniform(0.1, 0.3))
+            self.__type_character(char)
+            time.sleep(clipped_delay)
+
+            if random.random() < error_rate:  #
+                random_character_error = random.choice(NEAR_KEYWORDS_MAPS[char.lower()])
+                pyautogui.typewrite(random_character_error)
+
+                if random.random() < 0.1:  #
+                    random_double_character_error = random.choice(
+                        NEAR_KEYWORDS_MAPS[random_character_error]
+                    )
+                    pyautogui.typewrite(random_double_character_error)
+                    self.__type_character(Key.backspace)
+
+                self.__type_character(Key.backspace)
+
+            if random.random() < random_delay_rate:  #
+                time.sleep(random.uniform(0.1, 0.3))

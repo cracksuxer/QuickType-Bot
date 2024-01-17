@@ -1,13 +1,22 @@
 import os
+from typing import Dict, List, Literal
+import threading as th
 
 import cv2 as cv
 import numpy as np
 import pytesseract
-from typing import Literal
 
+from quicktype.data_manager import DataManager
+
+from rich.console import Console
+
+console = Console()
 
 class OcrManager:
+    """Manages the OCR process."""
+
     _instance = None
+    _dataManager = None
 
     def __new__(cls):
         if not cls._instance:
@@ -88,16 +97,19 @@ class OcrManager:
         return text_regions
 
     def _sort_text_regions(self, text_regions):
-        """Sorts text regions from top to bottom, left to right."""
+        """Sorts text regions into lines and orders them from left to right."""
         text_regions.sort(key=lambda x: x[1])
 
         line_clusters = {}
         line_height_threshold = 10
+        line_counter = 0
+        last_line_y = None
 
         for region in text_regions:
             _, y, _, h = region
             found_cluster = False
 
+            # Check if the region belongs to an existing line
             for line_y, cluster in line_clusters.items():
                 if (
                     abs(line_y - y) < line_height_threshold
@@ -107,40 +119,67 @@ class OcrManager:
                     found_cluster = True
                     break
 
+            # Start a new line if the region doesn't fit into existing lines
             if not found_cluster:
-                line_clusters[y] = [region]
+                if last_line_y is None or abs(last_line_y - y) >= line_height_threshold:
+                    line_counter += 1
+                    if line_counter > 4:
+                        break
+                    last_line_y = y
+                line_clusters.setdefault(line_counter, []).append(region)
 
-        sorted_regions = []
-        for line_y in sorted(line_clusters.keys()):
-            line_clusters[line_y].sort(key=lambda x: x[0])
-            sorted_regions.extend(line_clusters[line_y])
+        sorted_regions = {}
+        for line_number, regions in line_clusters.items():
+            regions.sort(key=lambda x: x[0])
+            sorted_regions[f'Line {line_number}'] = regions
 
         return sorted_regions
-    
-    def get_image_text(self, image_path: str, lang: Literal["spa", "eng"] = "spa") -> str:
+
+    def link_data_manager(self, dataManager: DataManager) -> None:
+        """Links the data manager to the OCR manager."""
+        OcrManager._dataManager = dataManager
+
+    def get_image_text(
+        self,
+        image_path: str,
+        lang: Literal["spa", "eng"],
+        typer_finished_event: th.Event,
+        line: int = 0,
+    ) -> None:
         """Gets the text from an image."""
         image = cv.imread(image_path)
         gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
         threshold_value = 90
-        _, binary_image = cv.threshold(gray_image, threshold_value, 255, cv.THRESH_BINARY)
+        _, binary_image = cv.threshold(
+            gray_image, threshold_value, 255, cv.THRESH_BINARY
+        )
 
         text_regions = self._segment_text_regions_with_dilation(binary_image)
         sorted_regions = self._sort_text_regions(text_regions)
-        text = ""
-        for region in sorted_regions:
-            region_color = self._determine_region_color(region, gray_image)
-            if region_color == "white":
-                continue
+        
+        if line != 0:
+            sorted_regions: Dict[str, List] = {
+                f"Line {line}" : sorted_regions[f"Line {line + 1}"]
+            }
+        
+        for _, regions in sorted_regions.items():
+            for region in regions:
+                if typer_finished_event.is_set():
+                    raise Exception("typer finished")
 
-            preprocessed_region = self._preprocess_region(region, region_color, gray_image)
-            text = pytesseract.image_to_string(
-                preprocessed_region, lang=lang, config=self._tess_configs
-            ).replace("\n", "")
+                region_color = self._determine_region_color(region, gray_image)
 
-            if region_color == "gray":
-                break
+                if region_color == "white":
+                    continue
 
-        print(text)
+                preprocessed_region = self._preprocess_region(
+                    region, region_color, gray_image
+                )
 
-        return text
+                text = pytesseract.image_to_string(
+                    preprocessed_region, lang=lang, config=self._tess_configs
+                ).replace("\n", "")
+
+                if OcrManager._dataManager:
+                    OcrManager._dataManager.send(text)
