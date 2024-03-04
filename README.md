@@ -8,7 +8,7 @@
 
 Click on the image below to view the demo video:
 
-[![Demo Video](images/screenshot.png)](images/typing_test.mp4 "Demo Video")
+[![Demo Video](images/screenshot.png)](images/typyng_test.mp4 "Demo Video")
 
 # To install poetry follow the instructions here
 ```bash
