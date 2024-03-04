@@ -1,5 +1,15 @@
 # QuickType-Bot
 
+## Project Screenshot
+
+![Project Screenshot](images/QuickTypeBot.png "Project Screenshot")
+
+## Demo Video
+
+Click on the image below to view the demo video:
+
+[![Demo Video](images/screenshot.png)](images/typing_test.mp4 "Demo Video")
+
 # To install poetry follow the instructions here
 ```bash
 https://python-poetry.org/docs/#installing-with-pipx
